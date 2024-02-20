@@ -23,10 +23,11 @@ $app = new Laravel\Lumen\Application(
     dirname(__DIR__)
 );
 
-// $app->withFacades();
+$app->withFacades();
 
 // $app->withEloquent();
 
+$app->configure('swagger-lume'); // added with Swagger
 /*
 |--------------------------------------------------------------------------
 | Register Container Bindings
@@ -37,6 +38,8 @@ $app = new Laravel\Lumen\Application(
 | your own bindings here if you like or you can make another file.
 |
 */
+
+$app->register(\SwaggerLume\ServiceProvider::class);  // added with Swagger
 
 $app->singleton(
     Illuminate\Contracts\Debug\ExceptionHandler::class,
