@@ -16,3 +16,6 @@
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
+
+$router->get('/shop_info/', 'PaymentController@shop_info');
+$router->post('/payment/', 'PaymentController@create_payment');
