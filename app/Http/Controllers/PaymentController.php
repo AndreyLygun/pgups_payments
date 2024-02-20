@@ -4,13 +4,26 @@ namespace App\Http\Controllers;
 use YooKassa\Client as YooClient;
 
 
+/**
+ * @OA\Info(
+ *     title="Платёжное API для коллективной системы печати",
+ *     version="0.1"
+ * )
+ */
+
 class PaymentController extends Controller
 {
     /**
-     * Create a new controller instance.
-     *
-     * @return void
+     * @OA\Get(
+     *      path="/shop_info",
+     *      operationId="deleteNotificationById",
+     *      summary="Delete notification by ID",
+     *      @OA\Parameter(name="id", in="path", @OA\Schema(type="integer")),
+     *      @OA\Response(response=200, description="OK"),
+     *      @OA\Response(response=400, description="Bad Request")
+     * )
      */
+
     public function __construct()
     {
         //

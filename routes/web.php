@@ -1,21 +1,43 @@
 <?php
+use OpenApi\Annotations as OA;
+
+/**
+ * @OA\Info(
+ *     title="Платёжное API для коллективной системы печати",
+ *     version="0.1"
+ * )
+ */
 
 /** @var \Laravel\Lumen\Routing\Router $router */
-
-/*
-|--------------------------------------------------------------------------
-| Application Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register all of the routes for an application.
-| It is a breeze. Simply tell Lumen the URIs it should respond to
-| and give it the Closure to call when that URI is requested.
-|
-*/
 
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->get('/shop_info/', 'PaymentController@shop_info');
+/**
+ * @OA\Get(
+ *      path="/check",
+ *      operationId="checkConnection",
+ *      summary="Проверить подключение к YooKassa",
+
+ *      @OA\Response(response=200, description="OK"),
+ *      @OA\Response(response=400, description="Bad Request")
+ * )
+ * @var \Laravel\Lumen\Routing\Router $router
+ *
+ */
+$router->get('/check/', 'PaymentController@shop_info');
+
+/**
+ * @OA\Post(
+ *      path="/payment/",
+ *      operationId="createPayment",
+ *      summary="Создать платёж",
+
+ *      @OA\Response(response=200, description="OK"),
+ *      @OA\Response(response=400, description="Bad Request")
+ * )
+ * @var \Laravel\Lumen\Routing\Router $router
+ *
+ */
 $router->post('/payment/', 'PaymentController@create_payment');
