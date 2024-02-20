@@ -1,6 +1,12 @@
 <?php
 use OpenApi\Annotations as OA;
 
+// php artisan swagger-lume:generate
+
+/**
+* @var \Laravel\Lumen\Routing\Router $router
+*/
+
 /**
  * @OA\Info(
  *     title="Платёжное API для коллективной системы печати",
@@ -19,7 +25,8 @@ $router->get('/', function () use ($router) {
  *      path="/check",
  *      operationId="checkConnection",
  *      summary="Проверить подключение к YooKassa",
-
+ *      description="Можно использовать для проверки подключения к YooKassa. Не требует параметров, возвращает (среди прочего) ID магазина и возможные способы платежа",*
+ *      tags={"Платежи"},
  *      @OA\Response(response=200, description="OK"),
  *      @OA\Response(response=400, description="Bad Request")
  * )
@@ -27,17 +34,27 @@ $router->get('/', function () use ($router) {
  *
  */
 $router->get('/check/', 'PaymentController@shop_info');
+$router->get('/payments/{id}', 'PaymentController@getPaymentInfo');
 
 /**
  * @OA\Post(
- *      path="/payment/",
- *      operationId="createPayment",
- *      summary="Создать платёж",
-
- *      @OA\Response(response=200, description="OK"),
- *      @OA\Response(response=400, description="Bad Request")
+ *     path="/payments/",
+ *     tags={"Платежи"},
+ *     description="С этого метода начинается процесс платежа." . "Метод создаёт платёж и возвращает информацию о нём. <br>Входные параметры: <ul><li>payment_amount - сумма платежа в рублях</li><li> user_id - ID пользователя в виде ivan.ivanov, redirect_url - адрес страницы, на который будет переадресован пользователь после платежа",
+ *     @OA\RequestBody(
+ *         @OA\MediaType(
+ *            mediaType="application/json",
+ *            @OA\Schema(
+ *               type="object",
+ *               @OA\Property(property="payment_amount", type="string"),
+ *               @OA\Property(property="user_id", type="string"),
+ *               @OA\Property(property="redirect_url", type="string"),
+ *            )
+ *        )
+ *    ),
+ *   @OA\Response(response=201,description="Successful created"),
+ *   @OA\Response(response=422, description="Error: Unprocessable Entity")
  * )
- * @var \Laravel\Lumen\Routing\Router $router
- *
  */
-$router->post('/payment/', 'PaymentController@create_payment');
+$router->post('/payments/', 'PaymentController@create_payment');
+
