@@ -1,0 +1,81 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Платёжное API для коллективной системы печати",
+        "version": "0.1"
+    },
+    "paths": {
+        "/check": {
+            "get": {
+                "tags": [
+                    "Платежи"
+                ],
+                "summary": "Проверить подключение к YooKassa",
+                "description": "Можно использовать для проверки подключения к YooKassa. Не требует параметров, возвращает (среди прочего) ID магазина и возможные способы платежа",
+                "operationId": "checkConnection",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    }
+                }
+            }
+        },
+        "//payments/{id}": {
+            "get": {
+                "tags": [
+                    "Платежи"
+                ],
+                "summary": "Получить информацию о платеже",
+                "description": "Получает информацию о платеже по Id платежа",
+                "operationId": "Get Payment Info",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    }
+                }
+            }
+        },
+        "/payments/": {
+            "post": {
+                "tags": [
+                    "Платежи"
+                ],
+                "description": "С этого метода начинается процесс платежа. Метод создаёт платёж и возвращает информацию о нём. <br>Входные параметры: <ul><li>payment_amount - сумма платежа в рублях</li><li> user_id - ID пользователя в виде ivan.ivanov, redirect_url - адрес страницы, на который будет переадресован пользователь после платежа",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "payment_amount": {
+                                        "type": "string"
+                                    },
+                                    "user_id": {
+                                        "type": "string"
+                                    },
+                                    "redirect_url": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful created"
+                    },
+                    "422": {
+                        "description": "Error: Unprocessable Entity"
+                    }
+                }
+            }
+        }
+    }
+}

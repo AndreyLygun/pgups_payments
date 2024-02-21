@@ -33,14 +33,34 @@ $router->get('/', function () use ($router) {
  * @var \Laravel\Lumen\Routing\Router $router
  *
  */
+
+$router->get('/env/{name}', function ($name) {
+    return "<pre> $name = " .  env($name, 'unknown');
+});
+
+
 $router->get('/check/', 'PaymentController@shop_info');
+
+/**
+ * @OA\Get(
+ *      path="//payments/{id}",
+ *      operationId="Get Payment Info",
+ *      summary="Получить информацию о платеже",
+ *      description="Получает информацию о платеже по Id платежа",
+ *      tags={"Платежи"},
+ *      @OA\Response(response=200, description="OK"),
+ *      @OA\Response(response=400, description="Bad Request")
+ * )
+ * @var \Laravel\Lumen\Routing\Router $router
+ *
+ */
 $router->get('/payments/{id}', 'PaymentController@getPaymentInfo');
 
 /**
  * @OA\Post(
  *     path="/payments/",
  *     tags={"Платежи"},
- *     description="С этого метода начинается процесс платежа." . "Метод создаёт платёж и возвращает информацию о нём. <br>Входные параметры: <ul><li>payment_amount - сумма платежа в рублях</li><li> user_id - ID пользователя в виде ivan.ivanov, redirect_url - адрес страницы, на который будет переадресован пользователь после платежа",
+ *     description="С этого метода начинается процесс платежа. Метод создаёт платёж и возвращает информацию о нём. <br>Входные параметры: <ul><li>payment_amount - сумма платежа в рублях</li><li> user_id - ID пользователя в виде ivan.ivanov, redirect_url - адрес страницы, на который будет переадресован пользователь после платежа",
  *     @OA\RequestBody(
  *         @OA\MediaType(
  *            mediaType="application/json",
