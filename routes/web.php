@@ -38,7 +38,7 @@ $router->get('/env[/{name}]', function ($name = null) {
     if ($name == null) {
         return "<pre>" . print_r($_ENV, true);
     }
-    return "<pre> $name = " .  getenv($name, 'unknown');
+    return "<pre>Снова $name = " .  getenv($name, 'unknown');
 });
 
 
