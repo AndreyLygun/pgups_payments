@@ -1,22 +1,14 @@
 <?php
 namespace App\Http\Controllers;
 
-use http\Client\Response;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Request;
-use YooKassa\Client as YooClient;
+use App\Services\YooClient;
 
 class PaymentController extends Controller
 {
-    public function __construct()
-    {
-        //
-    }
-
-
     public function shop_info() {
         $client = new YooClient();
-        $client->setAuth(env('PAYMENTSYSTEM_CLIENT_ID'), env('PAYMENTSYSTEM_CLIENT_SECRET'));
         try {
             $response = $client->me();
         } catch (\Exception $e) {
@@ -27,7 +19,6 @@ class PaymentController extends Controller
 
     public function getPaymentInfo($id) {
         $client = new YooClient();
-        $client->setAuth(env('PAYMENTSYSTEM_CLIENT_ID'), env('PAYMENTSYSTEM_CLIENT_SECRET'));
         try {
             $response = $client->getPaymentInfo($id);
         } catch (\Exception $e) {
@@ -51,8 +42,7 @@ class PaymentController extends Controller
             $user_mail = get_param('user_mail', $request);
             $description = 'Пополнение баланса пользователя ' . $user_id;
 
-            $client = new \YooKassa\Client();
-            $client->setAuth(env('PAYMENTSYSTEM_CLIENT_ID'), env('PAYMENTSYSTEM_CLIENT_SECRET'));
+            $client = new YooClient();
 
             $builder = \YooKassa\Request\Payments\CreatePaymentRequest::builder();
             $builder->setAmount($payment_amount)
