@@ -35,14 +35,14 @@ $router->get('/', function () use ($router) {
  */
 
 $router->get('/env[/{name}]', function ($name = null) {
-    if ($name == null) {
-        return "<pre>" . print_r($_ENV, true);
-    }
-    return [
-        "getenv($name)" => getenv($name),
-        "env($name)" => env($name),
+    $result = [
+        "getenv()" => getenv(),
         '$_ENV' => $_ENV
     ];
+    if ($name != null ) {
+        $result["name"] = env($name);
+    }
+    return $result;
 });
 
 
