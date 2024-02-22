@@ -1,0 +1,82 @@
+    # FROM – это первая инструкция в Dockerfile. Она указывает, на базе какого образа,  Dockerfile будет создавать свой образ.
+    # Указываем что будем использовать образ с ОС Alpine из репозитория docker.
+    FROM alpine:3.16.2
+
+    # Команда RUN выполняет команду внутри образа во время процесса сборки.
+    # Далее, обновляем операционную систему Alpine
+    RUN apk update && apk upgrade
+
+    # Далее нам нужно установить утилиты и php, мы можем добиться этого, используя команду RUN.
+    # Установим утилиты apline и php
+    RUN apk add --no-cache \
+        bash \
+        php8 \ 
+        php8-fpm \ 
+        php8-opcache \
+        php8-gd \
+        php8-zlib \
+        php8-curl \
+        php8-bcmath \
+        php8-ctype \
+        php8-iconv \
+        php8-intl \
+        php8-json \
+        php8-mbstring \
+        php8-mysqlnd \
+        php8-openssl \
+        php8-pdo \
+        php8-pdo_mysql \
+        php8-pdo_pgsql \
+        php8-pdo_sqlite \
+        php8-phar \
+        php8-posix \
+        php8-session \
+        php8-soap \
+        php8-xml \
+        php8-zip \
+        libmcrypt-dev \
+        libltdl 
+
+    # Далее установим nginx по гайду с официального сайте nginx. Я просто скопировал и вставил то, что есть в руководстве по установке nginx на alpine.
+    # https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/
+    RUN apk add openssl curl ca-certificates
+
+    # Чтобы настроить репозиторий apk для стабильных версий пакетов nginx, выполните команду:
+    RUN printf "%s%s%s\n" \
+    "http://nginx.org/packages/alpine/v" \
+    `egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release` \
+    "/main" \
+    | tee -a /etc/apk/repositories
+
+    # Импортируйте официальный ключ подписи nginx, чтобы apk мог проверить подлинность пакетов.
+    RUN curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
+
+    # Проверяем, что загруженный файл содержит правильный ключ
+    RUN openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout
+
+    # Переместите ключ в хранилище доверенных ключей apk
+    RUN mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
+
+    # Теперь, устанавливаем nginx
+    RUN apk add nginx
+
+    # Установите PHP Composer, если вы используете composer, вы можете раскомментировать этот файл.
+    RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+    # Копируем файлы проекта внутрь контейнера
+    COPY ./src /usr/share/nginx/html/project
+
+    # Скопируйте конфигурацию по умолчанию и вставьте ее в путь к конфигурации nginx внутри docker.
+    COPY ./nginx-configs/default.conf /etc/nginx/conf.d/default.conf
+
+    # Открываем порты так, чтобы они были снаружи контейнера.
+    EXPOSE 80
+    EXPOSE 443
+
+    # чтобы указать, что контейнер будет корректно завершать работу при получении сигнала SIGTERM.
+    STOPSIGNAL SIGTERM
+
+    # Выполните команду запуска.
+    # Запустите php-fpm8 и nginx через терминал bash.
+    CMD ["/bin/bash", "-c", "php-fpm8 && chmod 755 /usr/share/nginx/html/* && nginx -g 'daemon off;'"]
+

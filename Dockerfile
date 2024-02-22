@@ -1,84 +1,86 @@
-FROM ubuntu:latest AS base
+# First, We need an Operating System for our docker. We choose alpine.
+FROM alpine:3.19.1
 
-ENV DEBIAN_FRONTEND noninteractive
+# Next, Update Alpine OS
+RUN apk update && apk upgrade
 
-# Install dependencies
-RUN apt update
-RUN apt install -y software-properties-common
-RUN add-apt-repository -y ppa:ondrej/php
-RUN apt update
-RUN apt install -y php8.2\
-    php8.2-cli\
-    php8.2-common\
-    php8.2-fpm\
-    php8.2-mysql\
-    php8.2-zip\
-    php8.2-gd\
-    php8.2-mbstring\
-    php8.2-curl\
-    php8.2-xml\
-    php8.2-bcmath\
-    php8.2-pdo
+# Next, we need to install utilities inside alpine, we can achieve this by type RUN then, the alpine command.
+# Install apline utilities and php depedencies
+RUN apk add --no-cache \
+    bash \
+    php82-common \
+    php82-fpm \
+    php82-opcache \
+    php82-gd \
+    php82-zlib \
+    php82-curl \
+    php82-bcmath \
+    php82-ctype \
+    php82-iconv \
+    php82-intl \
+    php82-json \
+    php82-mbstring \
+    php82-mysqlnd \
+    php82-openssl \
+    php82-pdo \
+    php82-pdo_mysql \
+    php82-pdo_pgsql \
+    php82-pdo_sqlite \
+    php82-phar \
+    php82-posix \
+    php82-session \
+    php82-soap \
+    php82-xml \
+    php82-zip \
+    php-tokenizer \
+    php82-xml \
+    php-mbstring \
+    libmcrypt-dev \
+    libltdl \
+    composer 
 
-# Install php-fpm
-RUN apt install -y php8.2-fpm php8.2-cli
+# Next, Install nginx on alpine official guide in nginx official site. I just copied and paste what's on the site guide for installing nginx on alpine.
+# https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/
+RUN apk add openssl curl ca-certificates
 
-# Install composer
-RUN apt install -y curl
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# To set up the apk repository for stable nginx packages, run the command:
+RUN printf "%s%s%s\n" \
+"http://nginx.org/packages/alpine/v" \
+`egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release` \
+"/main" \
+| tee -a /etc/apk/repositories
 
-# Install nodejs
-RUN apt install -y ca-certificates gnupg
-RUN mkdir -p /etc/apt/keyrings
-RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-ENV NODE_MAJOR 20
-RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-RUN apt update
-RUN apt install -y nodejs
+# Import an official nginx signing key so apk could verify the packages authenticity. Fetch the key:
+RUN curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
 
-# Install nginx
-RUN apt install -y nginx
-RUN echo "\
-    server {\n\
-        listen 80;\n\
-        listen [::]:80;\n\
-        root /var/www/html/public;\n\
-        add_header X-Frame-Options \"SAMEORIGIN\";\n\
-        add_header X-Content-Type-Options \"nosniff\";\n\
-        index index.php;\n\
-        charset utf-8;\n\
-        location / {\n\
-            try_files \$uri \$uri/ /index.php?\$query_string;\n\
-        }\n\
-        location = /favicon.ico { access_log off; log_not_found off; }\n\
-        location = /robots.txt  { access_log off; log_not_found off; }\n\
-        error_page 404 /index.php;\n\
-        location ~ \.php$ {\n\
-            fastcgi_pass unix:/run/php/php8.2-fpm.sock;\n\
-            fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;\n\
-            include fastcgi_params;\n\
-        }\n\
-        location ~ /\.(?!well-known).* {\n\
-            deny all;\n\
-        }\n\
-    }\n" > /etc/nginx/sites-available/default
+# Verify that the downloaded file contains the proper key:
+RUN openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout
 
-RUN echo "\
-    #!/bin/sh\n\
-    echo \"Starting services...\"\n\
-    service php8.2-fpm start\n\
-    nginx -g \"daemon off;\" &\n\
-    echo \"Ready.\"\n\
-    tail -s 1 /var/log/nginx/*.log -f\n\
-    " > /start.sh
+# Move the key to apk trusted keys storage
+RUN mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
 
-COPY . /var/www/html
-WORKDIR /var/www/html
+# Now, install nginx
+RUN apk add nginx
 
-RUN chown -R www-data:www-data /var/www/html
+# Install PHP Composer, If you use composer, you can uncomment this one.
+# RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-RUN composer install
+# copy project file to nginx inside docker.
+ENV COMPOSER_ALLOW_SUPERUSER=1
+COPY . /usr/share/nginx/html
+WORKDIR /usr/share/nginx/html
+RUN composer update 
+#RUN composer install
 
+# Copy default config and paste it into nginx config path inside docker.
+#COPY ./nginx-configs/default.conf /etc/nginx/conf.d/default.conf
+
+# Expose port to be visible outside the container.
 EXPOSE 80
+EXPOSE 443
 
-CMD ["sh", "/start.sh"]
+STOPSIGNAL SIGTERM
+
+# Execute startup command.
+# Start php-fpm8 and nginx through bash terminal.
+CMD ["/bin/bash", "-c", "php-fpm82 && chmod 755 /usr/share/nginx/html/* && nginx -g 'daemon off;'"]
