@@ -4,8 +4,8 @@ RUN apk update && apk upgrade
 
 RUN apk add --no-cache \
         bash \
-        php8 \ 
-        php8-fpm \ 
+        php8 \
+        php8-fpm \
         php8-opcache \
         php8-gd \
         php8-zlib \
@@ -29,7 +29,7 @@ RUN apk add --no-cache \
         php8-xml \
         php8-zip \
         libmcrypt-dev \
-        libltdl 
+        libltdl
 
 RUN apk add openssl curl ca-certificates
 
@@ -46,6 +46,40 @@ RUN openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout
 RUN mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
 
 RUN apk add nginx
+
+RUN echo "\
+    server {\n\
+        listen 80;\n\
+        listen [::]:80;\n\
+        root /var/www/html/public;\n\
+        add_header X-Frame-Options \"SAMEORIGIN\";\n\
+        add_header X-Content-Type-Options \"nosniff\";\n\
+        index index.php;\n\
+        charset utf-8;\n\
+        location / {\n\
+            try_files \$uri \$uri/ /index.php?\$query_string;\n\
+        }\n\
+        location = /favicon.ico { access_log off; log_not_found off; }\n\
+        location = /robots.txt  { access_log off; log_not_found off; }\n\
+        error_page 404 /index.php;\n\
+        location ~ \.php$ {\n\
+            fastcgi_pass unix:/run/php/php8.2-fpm.sock;\n\
+            fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;\n\
+            include fastcgi_params;\n\
+        }\n\
+        location ~ /\.(?!well-known).* {\n\
+            deny all;\n\
+        }\n\
+    }\n" > /etc/nginx/sites-available/default
+
+RUN echo "\
+    #!/bin/sh\n\
+    echo \"Starting services...\"\n\
+    service php8.2-fpm start\n\
+    nginx -g \"daemon off;\" &\n\
+    echo \"Ready.\"\n\
+    tail -s 1 /var/log/nginx/*.log -f\n\
+    " > /start.sh
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
